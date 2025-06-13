@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>bibibi 거래소</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      background: linear-gradient(90deg, #1e1e2f, #3e3e55);
+      color: white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .logo {
+      font-size: 1.6rem;
+      font-weight: bold;
+    }
+    .search-bar {
+      flex: 1;
+      max-width: 500px;
+      margin: 0 30px;
+    }
+    .search-bar input {
+      width: 100%;
+      padding: 8px 15px;
+      border: none;
+      border-radius: 20px;
+      outline: none;
+      font-size: 1rem;
+    }
+    .nav-buttons {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    .nav-buttons a {
+      text-decoration: none;
+      color: white;
+      padding: 8px 15px;
+      border: 1px solid white;
+      border-radius: 20px;
+      transition: 0.3s;
+    }
+    .nav-buttons a:hover {
+      background: white;
+      color: #1e1e2f;
+    }
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .user-profile img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="logo"><a href="/" style="color: white; text-decoration: none;">bibibi</a></div>
+    <div>거래소</div>
+    <div>입출금</div>
+    <div>투자내역</div>
+    <div>투자내역</div>
+    
+    <div></div>
+    <div class="nav-buttons">
+        <div class="user-profile">
+        </div>
+        <!-- <a href="/mypage">My Page</a> -->
+        <!-- <a href="/logout">Log out</a> -->
+        <a href="/login">Login</a>
+        <a href="/register">Register</a>
+    </div>
+  </header>
+</body>
+</html>

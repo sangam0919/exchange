@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+  <title>Mock Exchange</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    html, body {
+      height: 100%;
+    }
+    #exchange-wrap {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      height: 90%;
+      border: 1px solid red;
+    }
+    .chart {
+      width: 800px;
+      height: 500px;
+      margin: 10px;
+      border: 1px solid blue;
+    }
+    .order {
+      display: flex;
+      flex-direction: column;
+      width: 500px;
+      height: 500px;
+      margin: 10px;
+      padding: 20px;
+      border: 1px solid green;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+    .order-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .order-tabs .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      background: #f1f1f1;
+      border-radius: 5px;
+      transition: 0.3s;
+    }
+    .order-tabs .tab.active {
+      background-color: #00b894;
+      color: white;
+      border-color: #00b894;
+    }
+    .tab-content {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .tab-content#buy {
+      display: flex;
+    }
+    .order div {
+      font-weight: bold;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    .order label {
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    .order input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .order button {
+      margin-top: 20px;
+      padding: 10px;
+      font-size: 16px;
+      background-color: #00b894;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .order button:hover {
+      background-color: #019875;
+    }
+    .chart-impomation {
+      width: 100%;
+      height: 100px;
+    }
+  </style>
+</head>
+<body>
+    <%- include("common/header") %>
+    <div id="exchange-wrap">
+      <div class="chart" id="chart">
+        <div class="chart-impomation">이름: BTC/KRW</div>
+      </div>
+      <div class="order">
+        <div class="order-tabs">
+          <button class="tab active" data-tab="buy">매수</button>
+          <button class="tab" data-tab="sell">매도</button>
+          <button class="tab" data-tab="history">거래내역</button>
+        </div>
+  
+        <div class="tab-content" id="buy">
+          <label>매수가격(KRW)</label>
+          <input type="text" id="buy-price">
+          <label>주문수량</label>
+          <input type="text" id="buy-amount">
+          <label>주문총액</label>
+          <input type="text" id="buy-total" readonly>
+          <button onclick="submitOrder('buy')">매수하기</button>
+        </div>
+  
+        <div class="tab-content" id="sell" style="display: none;">
+          <label>매도가격(KRW)</label>
+          <input type="text" id="sell-price">
+          <label>판매수량</label>
+          <input type="text" id="sell-amount">
+          <label>판매총액</label>
+          <input type="text" id="sell-total" readonly>
+          <button onclick="submitOrder('sell')">매도하기</button>
+        </div>
+  
+        <div class="tab-content" id="history" style="display: none;">
+          <p>최근 거래내역을 여기에 보여줄 수 있어요.</p>
+        </div>
+      </div>
+    </div>
+  
+    <script>
+      // 1. 차트 설정
+      const chartContainer = document.getElementById('chart');
+      const chart = LightweightCharts.createChart(chartContainer, {
+        layout: { background: { color: '#fff' }, textColor: '#000' },
+        grid: { vertLines: { color: '#eee' }, horzLines: { color: '#eee' } },
+        priceScale: { borderColor: '#ccc' },
+        timeScale: { borderColor: '#ccc', timeVisible: true },
+      });
+      chart.resize(800, 500);
+      const candleSeries = chart.addCandlestickSeries();
+  
+      // 2. 업비트에서 1분봉 가져오기
+      async function loadCandleData() {
+        try {
+          const res = await fetch('https://api.upbit.com/v1/candles/minutes/1?market=KRW-BTC&count=60');
+          const data = await res.json();
+          const mapped = data.reverse().map(item => ({
+            time: Math.floor(new Date(item.candle_date_time_kst) / 1000),
+            open: item.opening_price,
+            high: item.high_price,
+            low: item.low_price,
+            close: item.trade_price,
+          }));
+          candleSeries.setData(mapped);
+        } catch (err) {
+          console.error("캔들 로딩 실패", err);
+        }
+      }
+  
+      // 3. 실시간 업데이트
+      async function updateLatestPrice() {
+        try {
+          const res = await fetch('https://api.upbit.com/v1/ticker?markets=KRW-BTC');
+          const data = await res.json();
+          const last = data[0];
+          candleSeries.update({
+            time: Math.floor(new Date(last.trade_timestamp) / 1000),
+            open: last.opening_price,
+            high: last.high_price,
+            low: last.low_price,
+            close: last.trade_price,
+          });
+  
+          // 가격 라인 표시
+          chart.removePriceLine?.(currentPriceLine);
+          currentPriceLine = chart.addPriceLine({
+            price: last.trade_price,
+            color: 'red',
+            lineWidth: 1,
+            lineStyle: 2,
+            axisLabelVisible: true,
+            title: '실시간가'
+          });
+        } catch (err) {
+          console.error("가격 업데이트 실패", err);
+        }
+      }
+  
+      let currentPriceLine = null;
+      loadCandleData();
+      setInterval(updateLatestPrice, 5000); // 5초마다 실시간가 갱신
+  
+      // 4. 탭 전환
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const target = tab.dataset.tab;
+          document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+          tab.classList.add('active');
+          document.getElementById(target).style.display = 'flex';
+        });
+      });
+  
+      // 5. 주문 버튼 (백엔드 API 호출 연결)
+      function submitOrder(type) {
+        const price = document.getElementById(`${type}-price`).value;
+        const amount = document.getElementById(`${type}-amount`).value;
+        const total = price * amount;
+  
+        fetch('/api/order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type,       // 'buy' or 'sell'
+            market: 'KRW-BTC',
+            price,
+            amount,
+            total
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          alert(`${type === 'buy' ? '매수' : '매도'} 완료: ${data.message}`);
+        })
+        .catch(err => {
+          console.error("주문 실패", err);
+          alert("주문 처리 실패");
+        });
+      }
+  
+      // 6. 주문총액 자동 계산
+      ['buy', 'sell'].forEach(type => {
+        document.getElementById(`${type}-price`).addEventListener('input', () => {
+          const price = parseFloat(document.getElementById(`${type}-price`).value || 0);
+          const amount = parseFloat(document.getElementById(`${type}-amount`).value || 0);
+          document.getElementById(`${type}-total`).value = (price * amount).toLocaleString();
+        });
+        document.getElementById(`${type}-amount`).addEventListener('input', () => {
+          const price = parseFloat(document.getElementById(`${type}-price`).value || 0);
+          const amount = parseFloat(document.getElementById(`${type}-amount`).value || 0);
+          document.getElementById(`${type}-total`).value = (price * amount).toLocaleString();
+        });
+      });
+    </script>
+  <%- include("common/footer") %>
+</body>
+</html>

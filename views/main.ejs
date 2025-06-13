@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+   #exchange-wrap {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        border: 1px solid red;
+   } 
+ 
+   .chart-list {
+        width: 1000px;
+        height: 900px;
+        border: 1px solid green;
+   }
+</style>
+<body>
+    <%- include("common/header") %>
+    <div id="exchange-wrap">
+        <div class="chart-list">
+            <ul>
+                <li>한글명</li>
+                <li>현재가</li>
+                <li>전일 대비</li>
+                <li>거래대금</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
