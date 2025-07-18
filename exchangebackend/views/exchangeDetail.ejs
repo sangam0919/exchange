@@ -35,6 +35,20 @@
       font-weight: bold;
       font-size: 18px;
       color: #333;
+      z-index: 10;
+    }
+
+    .tooltip {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      background: rgba(0,0,0,0.75);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 5px;
+      font-size: 14px;
+      z-index: 10;
+      pointer-events: none;
     }
 
     .order {
@@ -122,6 +136,7 @@
   <div id="exchange-wrap">
     <div class="chart" id="chart">
       <div class="chart-impomation">이름: <%= market %></div>
+      <div class="tooltip" id="tooltip">가격: -</div>
     </div>
 
     <div class="order">
@@ -159,15 +174,33 @@
 
   <script>
     const MARKET = '<%= market %>';
-
     const chartContainer = document.getElementById('chart');
+    const tooltip = document.getElementById('tooltip');
+
     const chart = LightweightCharts.createChart(chartContainer, {
-      layout: { background: { color: '#fff' }, textColor: '#000' },
-      grid: { vertLines: { color: '#eee' }, horzLines: { color: '#eee' } },
-      priceScale: { borderColor: '#ccc' },
-      timeScale: { borderColor: '#ccc', timeVisible: true },
+      layout: {
+        background: {
+          type: 'gradient',
+          topColor: '#ffffff',
+          bottomColor: '#e3f2fd'
+        },
+        textColor: '#111',
+        fontSize: 12,
+        fontFamily: 'Arial'
+      },
+      grid: {
+        vertLines: { color: '#eee' },
+        horzLines: { color: '#eee' }
+      },
+      priceScale: { borderColor: '#bbb' },
+      timeScale: {
+        borderColor: '#bbb',
+        timeVisible: true
+      },
     });
+
     chart.resize(800, 500);
+
     const candleSeries = chart.addCandlestickSeries();
     let currentPriceLine = null;
 
@@ -180,7 +213,7 @@
           open: item.opening_price,
           high: item.high_price,
           low: item.low_price,
-          close: item.trade_price,
+          close: item.trade_price
         }));
         candleSeries.setData(mapped);
       } catch (err) {
@@ -193,14 +226,15 @@
         const res = await fetch(`https://api.upbit.com/v1/ticker?markets=${MARKET}`);
         const data = await res.json();
         const last = data[0];
+
         candleSeries.update({
-          time: Math.floor(new Date(last.trade_timestamp) / 1000),
+          time: currentMinute,
           open: last.opening_price,
           high: last.high_price,
           low: last.low_price,
-          close: last.trade_price,
+          close: last.trade_price
         });
-
+        
         chart.removePriceLine?.(currentPriceLine);
         currentPriceLine = chart.addPriceLine({
           price: last.trade_price,
@@ -214,6 +248,13 @@
         console.error("가격 업데이트 실패", err);
       }
     }
+
+    chart.subscribeCrosshairMove(param => {
+      if (param.point && param.seriesData) {
+        const price = param.seriesData.get(candleSeries)?.close;
+        tooltip.textContent = price ? `가격: ${price.toLocaleString()} KRW` : '가격: -';
+      }
+    });
 
     loadCandleData();
     setInterval(updateLatestPrice, 5000);

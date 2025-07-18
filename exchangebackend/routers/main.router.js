@@ -13,7 +13,7 @@ router.get('/exchangeDetail', (req, res) => {
 });
 
 // 시세 목록이 포함된 메인 페이지
-router.get('/main', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const marketRes = await axios.get('https://api.upbit.com/v1/market/all');
     const markets = marketRes.data.filter((m) => m.market.startsWith('KRW-'));
@@ -36,7 +36,6 @@ router.get('/main', async (req, res) => {
       acc_trade_price_24h: Math.floor(item.acc_trade_price_24h).toLocaleString()
     }));
 
-    // ✅ 페이지네이션 처리
     const page = parseInt(req.query.page) || 1;
     const itemsPerPage = 10;
     const totalPages = Math.ceil(tickers.length / itemsPerPage);

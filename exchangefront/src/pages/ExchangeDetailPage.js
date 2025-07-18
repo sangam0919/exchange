@@ -457,96 +457,74 @@ const ExchangeDetailPage = () => {
   // }, [market]);
 
     // 이게 업비트 socket 
-  useEffect(() => {
-    const ws = new WebSocket('wss://api.upbit.com/websocket/v1');
-  
-    ws.onopen = () => {
-      ws.send(JSON.stringify([
-        { ticket: "ticker" },
-        {
-          type: "ticker",
-          codes: [market] // 예: KRW-BTC
-        }
-      ]));
-    };
-
-
-// ❗ 문제 설명: useEffect가 중첩되어 있어 에러 발생
-// ✅ 해결 방법: 중첩된 useEffect 하나로 합치고, 두 개의 소켓 역할을 통합함
-
-useEffect(() => {
-  if (!candleSeriesRef.current) return;
-
-  const ws = new WebSocket('wss://api.upbit.com/websocket/v1');
-
-  ws.onopen = () => {
-    ws.send(
-      JSON.stringify([
-        { ticket: 'chart-and-price' },
-        { type: 'ticker', codes: [market] }
-      ])
-    );
-  };
-
-  ws.onmessage = (event) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const data = JSON.parse(reader.result);
-
-      setCurrentPrice(data.trade_price);
-
-      const tradePrice = data.trade_price;
-      const now = new Date();
-      const alignedTime = Math.floor(now.getTime() / 1000 / 60) * 60;
-
-      if (!liveCandleRef.current || liveCandleRef.current.time !== alignedTime) {
-        if (liveCandleRef.current) {
-          dataListRef.current.push(liveCandleRef.current);
-          candleSeriesRef.current.setData(dataListRef.current);
-        }
-
-        liveCandleRef.current = {
-          time: alignedTime,
-          open: tradePrice,
-          high: tradePrice,
-          low: tradePrice,
-          close: tradePrice,
-        };
-      } else {
-        const candle = liveCandleRef.current;
-        candle.high = Math.max(candle.high, tradePrice);
-        candle.low = Math.min(candle.low, tradePrice);
-        candle.close = tradePrice;
-
-        candleSeriesRef.current.update(candle);
-      }
-    };
-    reader.readAsText(event.data);
-  };
-
-  return () => {
-    ws.close();
-  };
-}, [market]);
-
-
-
-  
-    ws.onmessage = (event) => {
-      const blob = event.data;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const text = reader.result;
-        const data = JSON.parse(text);
-        setCurrentPrice(data.trade_price); // 실시간 가격 반영
+    useEffect(() => {
+      if (!candleSeriesRef.current) return;
+    
+      const ws = new WebSocket('wss://api.upbit.com/websocket/v1');
+    
+      ws.onopen = () => {
+        ws.send(JSON.stringify([
+          { ticket: 'chart-and-price' },
+          { type: 'ticker', codes: [market] }
+        ]));
       };
-      reader.readAsText(blob);
-    };
+    
+      ws.onmessage = (event) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const data = JSON.parse(reader.result);
+          setCurrentPrice(data.trade_price);
+    
+          const tradePrice = data.trade_price;
+          const now = new Date();
+          const alignedTime = Math.floor(now.getTime() / 1000 / 60) * 60;
+    
+          if (!liveCandleRef.current || liveCandleRef.current.time !== alignedTime) {
+            if (liveCandleRef.current) {
+              dataListRef.current.push(liveCandleRef.current);
+              candleSeriesRef.current.setData(dataListRef.current);
+            }
+    
+            liveCandleRef.current = {
+              time: alignedTime,
+              open: tradePrice,
+              high: tradePrice,
+              low: tradePrice,
+              close: tradePrice,
+            };
+          } else {
+            const candle = liveCandleRef.current;
+            candle.high = Math.max(candle.high, tradePrice);
+            candle.low = Math.min(candle.low, tradePrice);
+            candle.close = tradePrice;
+    
+            candleSeriesRef.current.update(candle);
+          }
+        };
+        reader.readAsText(event.data);
+      };
+    
+      return () => {
+        ws.close();
+      };
+    }, [market]);
+    
   
-    return () => {
-      ws.close();
-    };
-  }, [market]);
+  //   ws.onmessage = (event) => {
+  //     const blob = event.data;
+  //     const reader = new FileReader();
+  //     reader.onload = () => {
+  //       const text = reader.result;
+  //       const data = JSON.parse(text);
+  //       setCurrentPrice(data.trade_price); // 실시간 가격 반영
+  //     };
+  //     reader.readAsText(blob);
+  //   };
+  
+  //   return () => {
+  //     ws.close();
+  //   };
+  // }, [market]);
 
 
   // const tokenMap = {
