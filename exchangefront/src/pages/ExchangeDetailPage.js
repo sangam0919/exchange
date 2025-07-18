@@ -469,6 +469,60 @@ const ExchangeDetailPage = () => {
         }
       ]));
     };
+
+    // 🧠 실시간 차트 소켓 적용을 위한 수정 코드 (기존 candle 갱신부 대체)
+
+useEffect(() => {
+  if (!candleSeriesRef.current) return;
+
+  const ws = new WebSocket('wss://api.upbit.com/websocket/v1');
+
+  ws.onopen = () => {
+    ws.send(
+      JSON.stringify([
+        { ticket: 'chart-live' },
+        { type: 'ticker', codes: [market] }
+      ])
+    );
+  };
+
+  ws.onmessage = (event) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const data = JSON.parse(reader.result);
+      const tradePrice = data.trade_price;
+      const now = new Date();
+      const alignedTime = Math.floor(now.getTime() / 1000 / 60) * 60;
+
+      if (!liveCandleRef.current || liveCandleRef.current.time !== alignedTime) {
+        if (liveCandleRef.current) {
+          dataListRef.current.push(liveCandleRef.current);
+          candleSeriesRef.current.setData(dataListRef.current);
+        }
+
+        liveCandleRef.current = {
+          time: alignedTime,
+          open: tradePrice,
+          high: tradePrice,
+          low: tradePrice,
+          close: tradePrice,
+        };
+      } else {
+        const candle = liveCandleRef.current;
+        candle.high = Math.max(candle.high, tradePrice);
+        candle.low = Math.min(candle.low, tradePrice);
+        candle.close = tradePrice;
+
+        candleSeriesRef.current.update(candle);
+      }
+    };
+    reader.readAsText(event.data);
+  };
+
+  return () => ws.close();
+}, [market]);
+
+
   
     ws.onmessage = (event) => {
       const blob = event.data;

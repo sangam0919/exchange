@@ -123,20 +123,14 @@ const MainPage = () => {
     const fetchMarketData = async () => {
       const res = await fetch('https://api.upbit.com/v1/market/all?isDetails=true');
       const data = await res.json();
-      console.log("✅ 업비트 마켓 전체 리스트 (isDetails=true)");
-      console.table(data);
-
       const krwMarkets = data.filter((m) => m.market.startsWith('KRW-'));
       setMarkets(krwMarkets);
-
-      // ✅ symbol → korean_name 매핑을 localStorage에 저장 (한 번만)
       localStorage.setItem('symbolToKoreanMap', JSON.stringify(data));
-      console.log("🗺 symbolToKoreanMap 저장 완료!");
     };
-
     fetchMarketData();
   }, []);
 
+  // 🔁 원래 fetch 방식 (local용): 주석 처리해둠
   // useEffect(() => {
   //   const fetchTickers = async () => {
   //     if (markets.length === 0) return;
@@ -159,28 +153,23 @@ const MainPage = () => {
 
   useEffect(() => {
     if (markets.length === 0) return;
-  
     const ws = new WebSocket('wss://api.upbit.com/websocket/v1');
     const tickerMap = {};
-  
+
     ws.onopen = () => {
       const codes = markets.map((m) => m.market);
       ws.send(JSON.stringify([
         { ticket: "main-page" },
-        {
-          type: "ticker",
-          codes: codes,
-        }
+        { type: "ticker", codes: codes }
       ]));
     };
-  
+
     ws.onmessage = (event) => {
       const reader = new FileReader();
       reader.onload = () => {
         const data = JSON.parse(reader.result);
         const marketInfo = markets.find((m) => m.market === data.code);
         if (!marketInfo) return;
-  
         tickerMap[data.code] = {
           market: data.code,
           trade_price: data.trade_price,
@@ -188,17 +177,15 @@ const MainPage = () => {
           acc_trade_price_24h: data.acc_trade_price_24h,
           korean_name: marketInfo.korean_name
         };
-  
         setTickers(Object.values(tickerMap));
       };
       reader.readAsText(event.data);
     };
-  
+
     return () => {
       ws.close();
     };
   }, [markets]);
-  
 
   const handleSort = (key) => {
     const nextOrder = sortOrders[key] === 'asc' ? 'desc' : 'asc';
@@ -209,14 +196,12 @@ const MainPage = () => {
   const getSortedTickers = () => {
     const sorted = [...tickers];
     if (!sortedKey) return sorted;
-
     const order = sortOrders[sortedKey];
     sorted.sort((a, b) => {
       const aVal = sortedKey === 'price' ? a.trade_price : a.signed_change_rate;
       const bVal = sortedKey === 'price' ? b.trade_price : b.signed_change_rate;
       return order === 'asc' ? aVal - bVal : bVal - aVal;
     });
-
     return sorted;
   };
 
@@ -272,20 +257,14 @@ const MainPage = () => {
 
       <PaginationWrapper>
         {startPage > 1 && <NavButton prev onClick={handlePrev}>이전의</NavButton>}
-
         {[...Array(endPage - startPage + 1)].map((_, i) => {
           const pageNum = startPage + i;
           return (
-            <PageButton
-              key={pageNum}
-              onClick={() => setPage(pageNum)}
-              active={pageNum === page}
-            >
+            <PageButton key={pageNum} onClick={() => setPage(pageNum)} active={pageNum === page}>
               {pageNum}
             </PageButton>
           );
         })}
-
         {endPage < totalPages && <NavButton onClick={handleNext}>다음</NavButton>}
       </PaginationWrapper>
     </>
