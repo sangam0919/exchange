@@ -470,7 +470,9 @@ const ExchangeDetailPage = () => {
       ]));
     };
 
-    // 🧠 실시간 차트 소켓 적용을 위한 수정 코드 (기존 candle 갱신부 대체)
+
+// ❗ 문제 설명: useEffect가 중첩되어 있어 에러 발생
+// ✅ 해결 방법: 중첩된 useEffect 하나로 합치고, 두 개의 소켓 역할을 통합함
 
 useEffect(() => {
   if (!candleSeriesRef.current) return;
@@ -480,7 +482,7 @@ useEffect(() => {
   ws.onopen = () => {
     ws.send(
       JSON.stringify([
-        { ticket: 'chart-live' },
+        { ticket: 'chart-and-price' },
         { type: 'ticker', codes: [market] }
       ])
     );
@@ -490,6 +492,9 @@ useEffect(() => {
     const reader = new FileReader();
     reader.onload = () => {
       const data = JSON.parse(reader.result);
+
+      setCurrentPrice(data.trade_price);
+
       const tradePrice = data.trade_price;
       const now = new Date();
       const alignedTime = Math.floor(now.getTime() / 1000 / 60) * 60;
@@ -519,8 +524,11 @@ useEffect(() => {
     reader.readAsText(event.data);
   };
 
-  return () => ws.close();
+  return () => {
+    ws.close();
+  };
 }, [market]);
+
 
 
   
