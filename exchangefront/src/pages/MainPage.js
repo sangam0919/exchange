@@ -137,25 +137,68 @@ const MainPage = () => {
     fetchMarketData();
   }, []);
 
+  // useEffect(() => {
+  //   const fetchTickers = async () => {
+  //     if (markets.length === 0) return;
+  //     const allMarketCodes = markets.map((m) => m.market).join(',');
+  //     const res = await fetch(`https://api.upbit.com/v1/ticker?markets=${allMarketCodes}`);
+  //     const data = await res.json();
+
+  //     const combined = data.map((d) => {
+  //       const marketInfo = markets.find((m) => m.market === d.market);
+  //       return { ...d, korean_name: marketInfo?.korean_name || '' };
+  //     });
+
+  //     setTickers(combined);
+  //   };
+
+  //   fetchTickers();
+  //   const interval = setInterval(fetchTickers, 5000);
+  //   return () => clearInterval(interval);
+  // }, [markets]);
+
   useEffect(() => {
-    const fetchTickers = async () => {
-      if (markets.length === 0) return;
-      const allMarketCodes = markets.map((m) => m.market).join(',');
-      const res = await fetch(`https://api.upbit.com/v1/ticker?markets=${allMarketCodes}`);
-      const data = await res.json();
-
-      const combined = data.map((d) => {
-        const marketInfo = markets.find((m) => m.market === d.market);
-        return { ...d, korean_name: marketInfo?.korean_name || '' };
-      });
-
-      setTickers(combined);
+    if (markets.length === 0) return;
+  
+    const ws = new WebSocket('wss://api.upbit.com/websocket/v1');
+    const tickerMap = {};
+  
+    ws.onopen = () => {
+      const codes = markets.map((m) => m.market);
+      ws.send(JSON.stringify([
+        { ticket: "main-page" },
+        {
+          type: "ticker",
+          codes: codes,
+        }
+      ]));
     };
-
-    fetchTickers();
-    const interval = setInterval(fetchTickers, 5000);
-    return () => clearInterval(interval);
+  
+    ws.onmessage = (event) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const data = JSON.parse(reader.result);
+        const marketInfo = markets.find((m) => m.market === data.code);
+        if (!marketInfo) return;
+  
+        tickerMap[data.code] = {
+          market: data.code,
+          trade_price: data.trade_price,
+          signed_change_rate: data.signed_change_rate,
+          acc_trade_price_24h: data.acc_trade_price_24h,
+          korean_name: marketInfo.korean_name
+        };
+  
+        setTickers(Object.values(tickerMap));
+      };
+      reader.readAsText(event.data);
+    };
+  
+    return () => {
+      ws.close();
+    };
   }, [markets]);
+  
 
   const handleSort = (key) => {
     const nextOrder = sortOrders[key] === 'asc' ? 'desc' : 'asc';

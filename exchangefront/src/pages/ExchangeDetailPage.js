@@ -312,16 +312,17 @@ const ExchangeDetailPage = () => {
     fetchMarketName();
   }, [market]);
 
-  useEffect(() => {
-    const fetchPrice = async () => {
-      const res = await fetch(`https://api.upbit.com/v1/ticker?markets=${market}`);
-      const [data] = await res.json();
-      setCurrentPrice(data.trade_price); // ← 이 줄을 고쳐야 함!
-    };
-    fetchPrice();
-    const interval = setInterval(fetchPrice, 3000);
-    return () => clearInterval(interval);
-  }, [market]);
+  // setTime써서 차트 뛰우는거 가격이랑 
+  // useEffect(() => {
+  //   const fetchPrice = async () => {
+  //     const res = await fetch(`https://api.upbit.com/v1/ticker?markets=${market}`);
+  //     const [data] = await res.json();
+  //     setCurrentPrice(data.trade_price); // ← 이 줄을 고쳐야 함!
+  //   };
+  //   fetchPrice();
+  //   const interval = setInterval(fetchPrice, 3000);
+  //   return () => clearInterval(interval);
+  // }, [market]);
 
   useEffect(() => {
     if (!currentPrice) return;
@@ -418,42 +419,73 @@ const ExchangeDetailPage = () => {
   const liveCandleRef = useRef(null);
   const dataListRef = useRef([]);
 
+  // useEffect(() => {
+  //   if (!candleSeriesRef.current) return;
+
+  //   const updatePrice = async () => {
+  //     const res = await fetch(`https://api.upbit.com/v1/ticker?markets=${market}`);
+  //     const [data] = await res.json();
+
+  //     const now = new Date();
+  //     const alignedTime = Math.floor(now.getTime() / 1000 / 60) * 60;
+
+  //     if (!liveCandleRef.current || liveCandleRef.current.time !== alignedTime) {
+  //       if (liveCandleRef.current) {
+  //         dataListRef.current.push(liveCandleRef.current);
+  //         candleSeriesRef.current.setData(dataListRef.current);
+  //       }
+
+  //       liveCandleRef.current = {
+  //         time: alignedTime,
+  //         open: data.trade_price,
+  //         high: data.trade_price,
+  //         low: data.trade_price,
+  //         close: data.trade_price,
+  //       };
+  //     } else {
+  //       const candle = liveCandleRef.current;
+  //       candle.high = Math.max(candle.high, data.trade_price);
+  //       candle.low = Math.min(candle.low, data.trade_price);
+  //       candle.close = data.trade_price;
+
+  //       candleSeriesRef.current.update(candle);
+  //     }
+  //   };
+
+  //   const interval = setInterval(updatePrice, 5000);
+  //   return () => clearInterval(interval);
+  // }, [market]);
+
+    // 이게 업비트 socket 
   useEffect(() => {
-    if (!candleSeriesRef.current) return;
-
-    const updatePrice = async () => {
-      const res = await fetch(`https://api.upbit.com/v1/ticker?markets=${market}`);
-      const [data] = await res.json();
-
-      const now = new Date();
-      const alignedTime = Math.floor(now.getTime() / 1000 / 60) * 60;
-
-      if (!liveCandleRef.current || liveCandleRef.current.time !== alignedTime) {
-        if (liveCandleRef.current) {
-          dataListRef.current.push(liveCandleRef.current);
-          candleSeriesRef.current.setData(dataListRef.current);
+    const ws = new WebSocket('wss://api.upbit.com/websocket/v1');
+  
+    ws.onopen = () => {
+      ws.send(JSON.stringify([
+        { ticket: "ticker" },
+        {
+          type: "ticker",
+          codes: [market] // 예: KRW-BTC
         }
-
-        liveCandleRef.current = {
-          time: alignedTime,
-          open: data.trade_price,
-          high: data.trade_price,
-          low: data.trade_price,
-          close: data.trade_price,
-        };
-      } else {
-        const candle = liveCandleRef.current;
-        candle.high = Math.max(candle.high, data.trade_price);
-        candle.low = Math.min(candle.low, data.trade_price);
-        candle.close = data.trade_price;
-
-        candleSeriesRef.current.update(candle);
-      }
+      ]));
     };
-
-    const interval = setInterval(updatePrice, 5000);
-    return () => clearInterval(interval);
+  
+    ws.onmessage = (event) => {
+      const blob = event.data;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = reader.result;
+        const data = JSON.parse(text);
+        setCurrentPrice(data.trade_price); // 실시간 가격 반영
+      };
+      reader.readAsText(blob);
+    };
+  
+    return () => {
+      ws.close();
+    };
   }, [market]);
+
 
   // const tokenMap = {
   //   'KRW-BTC': '0x85b8C6d6a4958EB75bdde400876A135d716E7643',  

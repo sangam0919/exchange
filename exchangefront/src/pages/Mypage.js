@@ -177,16 +177,48 @@ const MyPage = () => {
     init();
   }, []);
 
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     const symbols = [...new Set(orders.map((o) => o.symbol))];
+  //     if (symbols.length > 0) {
+  //       setPrevPrices(currentPrices);
+  //       fetchCurrentPrices(symbols);
+  //     }
+  //   }, 1000);
+  //   return () => clearInterval(interval);
+  // }, [orders, currentPrices]);
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      const symbols = [...new Set(orders.map((o) => o.symbol))];
-      if (symbols.length > 0) {
-        setPrevPrices(currentPrices);
-        fetchCurrentPrices(symbols);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [orders, currentPrices]);
+    const symbols = [...new Set(orders.map((o) => o.symbol))];
+    if (symbols.length === 0) return;
+  
+    const ws = new WebSocket('wss://api.upbit.com/websocket/v1');
+  
+    ws.onopen = () => {
+      ws.send(JSON.stringify([
+        { ticket: 'mypage' },
+        {
+          type: 'ticker',
+          codes: symbols,
+        }
+      ]));
+    };
+  
+    ws.onmessage = (event) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const data = JSON.parse(reader.result);
+        setCurrentPrices((prev) => ({
+          ...prev,
+          [data.code]: data.trade_price,
+        }));
+      };
+      reader.readAsText(event.data);
+    };
+  
+    return () => ws.close();
+  }, [orders]);
+  
 
   const enrichedOrders = orders.map((o) => {
     const now = currentPrices[o.symbol] || 0;
