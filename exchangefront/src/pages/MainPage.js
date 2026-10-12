@@ -64,6 +64,7 @@ const MainPage = () => {
   const [sortKey, setSortKey] = useState('acc_trade_price_24h');
   const [sortAscending, setSortAscending] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [tickerLoadError, setTickerLoadError] = useState(false);
   const pageSize = 10;
   const navigate = useNavigate();
 
@@ -74,9 +75,13 @@ const MainPage = () => {
         const response = await fetch(`${API_BASE_URL}/main/api/upbit/tickers`);
         if (!response.ok) throw new Error('시세를 불러오지 못했습니다.');
         const data = await response.json();
-        if (active) setTickers(data);
+        if (active) {
+          setTickers(data);
+          setTickerLoadError(false);
+        }
       } catch (error) {
         console.error('Ticker loading failed:', error);
+        if (active) setTickerLoadError(true);
       }
     };
     fetchTickers();
@@ -128,9 +133,9 @@ const MainPage = () => {
         </Hero>
 
         <Stats>
-          <StatCard><StatIcon $tone="mint"><Activity size={19}/></StatIcon><div><StatLabel>거래 가능 마켓</StatLabel><StatValue>{totalMarkets ? `${totalMarkets} markets` : 'Loading'}</StatValue></div></StatCard>
+          <StatCard><StatIcon $tone="mint"><Activity size={19}/></StatIcon><div><StatLabel>거래 가능 마켓</StatLabel><StatValue>{totalMarkets ? `${totalMarkets}개` : '불러오는 중'}</StatValue></div></StatCard>
           <StatCard><StatIcon $tone="blue"><TrendingUp size={19}/></StatIcon><div><StatLabel>상승 마켓</StatLabel><StatValue>{totalMarkets ? `${upCount}개` : '—'}</StatValue></div></StatCard>
-          <StatCard><StatIcon $tone="violet"><ShieldCheck size={19}/></StatIcon><div><StatLabel>거래 모드</StatLabel><StatValue>Paper trading</StatValue></div></StatCard>
+          <StatCard><StatIcon $tone="violet"><ShieldCheck size={19}/></StatIcon><div><StatLabel>거래 모드</StatLabel><StatValue>모의 거래</StatValue></div></StatCard>
         </Stats>
 
         <MarketHeader>
@@ -157,7 +162,8 @@ const MainPage = () => {
             </Table>
           </TableScroll>
           {tickers.length > 0 && filteredTickers.length === 0 && <Empty>검색 결과가 없습니다.</Empty>}
-          {!tickers.length && <Empty>실시간 시세를 불러오고 있습니다…</Empty>}
+          {!tickers.length && <Empty>{tickerLoadError ? '시세를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.' : '실시간 시세를 불러오고 있습니다…'}</Empty>}
+          {tickers.length > 0 && tickerLoadError && <Empty>시세 연결이 끊겨 마지막으로 받은 가격을 보여주고 있어요.</Empty>}
           {filteredTickers.length > 0 && <Pagination aria-label="Market pages">
             <button type="button" onClick={() => setCurrentPage(1)} disabled={currentPage === 1} aria-label="First page">&laquo;</button>
             <button type="button" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1} aria-label="Previous page">&lsaquo;</button>

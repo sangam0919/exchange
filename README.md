@@ -1,20 +1,38 @@
 # SA Exchange
 
-A portfolio demo for browsing every Upbit KRW market and practicing buy/sell orders with virtual funds. Market quotes are fetched live from public Upbit data. Orders, balances, and holdings are simulated in the current browser only. The app does not use a wallet, smart account, blockchain, or real funds.
+업비트 KRW 마켓 시세를 살펴보고 가상 잔고로 매수와 매도를 연습하는 포트폴리오용 모의 거래 앱입니다. 지갑이나 계정을 연결할 필요 없이 브라우저에서 바로 시작할 수 있습니다.
 
-## Features
+## 프로젝트 소개
 
-- Paginated list of all available KRW markets, with search and sorting
-- Market detail charts and live prices
-- Browser-based paper trading with a starting balance of 10,000,000 KRW
-- Buy and sell orders with a 0.05% simulated fee
-- Local portfolio, holdings, and order history
+실시간 공개 시세와 캔들 차트를 바탕으로, 검색부터 주문·자산 확인·매도까지 이어지는 거래 흐름을 구현했습니다. 실제 거래소와 연결하지 않고도 사용자가 코인 거래 화면을 경험할 수 있도록 모의 거래로 범위를 정했습니다.
 
-Each browser profile has a separate account stored in localStorage. It does not sync across devices. Use the portfolio page reset button to restore the starting balance and clear the local demo history.
+## 주요 기능
 
-## Run locally
+- 업비트 KRW 마켓 전체 목록, 검색, 정렬, 페이지네이션
+- 코인별 현재가와 캔들 차트
+- 1,000만 원 가상 잔고로 매수·매도 연습
+- 0.05% 모의 수수료, 주문 전 예상 금액과 잔고 안내
+- 보유 자산, 평가 금액, 평가 손익, 거래 내역
+- 브라우저에 잔고와 주문을 저장하고 초기화하는 기능
 
-Install Node.js, then run from the repository root:
+## 시연 흐름
+
+1. 마켓 목록에서 코인을 검색하거나 페이지를 넘겨 선택합니다.
+2. 가격과 매수 금액을 확인하고 모의 매수합니다.
+3. 내 포트폴리오에서 잔고와 보유 자산, 주문 내역을 확인합니다.
+4. 보유 수량을 입력하거나 전량 매도한 뒤 변경된 잔고를 확인합니다.
+
+## 기술 구성
+
+- 프론트엔드: React, React Router, styled-components
+- 차트: lightweight-charts
+- 백엔드: Node.js, Express
+- 시세: 업비트 공개 API
+- 모의 계정: 브라우저 localStorage
+
+## 로컬 실행
+
+Node.js가 설치된 환경에서 저장소 루트 폴더에서 실행합니다.
 
 ```bash
 npm install
@@ -23,14 +41,15 @@ npm install --prefix exchangefront
 npm run dev
 ```
 
-- Frontend: http://localhost:3000
-- Backend: http://localhost:4000
-- Backend health: http://localhost:4000/health
+- 프론트엔드: http://localhost:3000
+- 백엔드: http://localhost:4000
+- 백엔드 상태 확인: http://localhost:4000/health
 
-The backend provides the market ticker API used by the frontend. Set `REACT_APP_API_BASE_URL` in the frontend environment when the API is hosted somewhere other than `http://localhost:4000`.
+시세 API 주소를 변경해야 하는 배포 환경에서는 `exchangefront/.env.example`을 참고해 `REACT_APP_API_BASE_URL`을 설정하고, 백엔드의 CORS 허용 목록에 프론트엔드 주소를 추가하세요.
 
-## Deployment notes
+## 동작 범위와 한계
 
-Deploy the frontend and ticker API to hosts reachable by the user. Configure `REACT_APP_API_BASE_URL` for the deployed API and allow the deployed frontend origin in the backend CORS configuration. The demo account is stored only in the visitor's browser and is not a production account or secure wallet.
-
-This project is for portfolio demonstration and simulated trading only. It does not place real orders or provide financial services.
+- 매수·매도는 입력한 가격으로 즉시 체결되는 모의 주문입니다. 실제 주문이나 자산 이동은 발생하지 않습니다.
+- 잔고와 주문 내역은 해당 브라우저의 localStorage에 저장되며 다른 기기나 브라우저와 동기화되지 않습니다.
+- 시세는 외부 공개 API에 의존하므로 API 장애나 네트워크 상태에 따라 표시가 늦어질 수 있습니다.
+- 이 프로젝트는 포트폴리오 시연용이며 실제 금융 서비스가 아닙니다.
