@@ -1,9 +1,36 @@
-프론트에서 매수 매도 누르면 -> 백엔드 로직에서 처리(구매 이력)
+# SA Exchange
 
-프론트에서 블록체인의 지갑에 있는 토큰으로 매수 매도 하는거잖아요 -> 블록체인 지갑 나가는거잖아요 그럼 그이력에 블록체인 지갑에 담기는거아닌가요?
--> User 테이블 -> 이력이라는 테이블에 저장이되고 매수 매도 테이블 -> 마이페이지 -> 실시간으로 금액이 변동 계속 가능한거예요 백엔드 업비트 api 
-백엔드 그 내가시점으로 그 시점가져와서 ==== 업비트 현재가격과 
+A portfolio demo for browsing every Upbit KRW market and practicing buy/sell orders with virtual funds. Market quotes are fetched live from public Upbit data. Orders, balances, and holdings are simulated in the current browser only. The app does not use a wallet, smart account, blockchain, or real funds.
 
-- 스테이블 (ERC20을 쓸곳은 내 현재 자산)
-- 사용할때 지갑의 내 돈  <- ERC20
-ERC20
+## Features
+
+- Paginated list of all available KRW markets, with search and sorting
+- Market detail charts and live prices
+- Browser-based paper trading with a starting balance of 10,000,000 KRW
+- Buy and sell orders with a 0.05% simulated fee
+- Local portfolio, holdings, and order history
+
+Each browser profile has a separate account stored in localStorage. It does not sync across devices. Use the portfolio page reset button to restore the starting balance and clear the local demo history.
+
+## Run locally
+
+Install Node.js, then run from the repository root:
+
+```bash
+npm install
+npm install --prefix exchangebackend
+npm install --prefix exchangefront
+npm run dev
+```
+
+- Frontend: http://localhost:3000
+- Backend: http://localhost:4000
+- Backend health: http://localhost:4000/health
+
+The backend provides the market ticker API used by the frontend. Set `REACT_APP_API_BASE_URL` in the frontend environment when the API is hosted somewhere other than `http://localhost:4000`.
+
+## Deployment notes
+
+Deploy the frontend and ticker API to hosts reachable by the user. Configure `REACT_APP_API_BASE_URL` for the deployed API and allow the deployed frontend origin in the backend CORS configuration. The demo account is stored only in the visitor's browser and is not a production account or secure wallet.
+
+This project is for portfolio demonstration and simulated trading only. It does not place real orders or provide financial services.

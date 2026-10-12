@@ -1,45 +1,53 @@
-const { Sequelize, DataTypes } = require('sequelize');
-const sequelize = new Sequelize(process.env.DB_URL || 'mysql://root:password@localhost:3306/exchange', {
-  logging: false,
+require("dotenv").config();
+const path = require("path");
+const Sequelize = require("sequelize");
+
+const dialect = process.env.DATABASE_DIALECT || "mysql";
+
+const sequelize =
+  dialect === "sqlite"
+    ? new Sequelize({
+        dialect: "sqlite",
+        storage: path.resolve(__dirname, "..", process.env.SQLITE_STORAGE || "dev.sqlite"),
+        logging: false,
+      })
+    : new Sequelize(
+        process.env.DATABASE_NAME,
+        process.env.DATABASE_USER,
+        process.env.DATABASE_PASSWORD,
+        {
+          host: process.env.DATABASE_HOST,
+          port: process.env.DATABASE_PORT,
+          dialect: "mysql",
+          logging: false,
+        }
+      );
+
+const User = require("../models/user");
+const Wallet = require("../models/wallet");
+const Order = require("../models/order");
+const Ranking = require("../models/ranking");
+const Notification = require("../models/notification");
+
+const models = {
+  User: User.init(sequelize),
+  Wallet: Wallet.init(sequelize),
+  Order: Order.init(sequelize),
+  Ranking: Ranking.init(sequelize),
+  Notification: Notification.init(sequelize),
+};
+
+Object.values(models).forEach((model) => {
+  if (model.associate) model.associate(models);
 });
 
-const User = require('./user')(sequelize, DataTypes);
-const Wallet = require('./wallet')(sequelize, DataTypes);
-const Order = require('./order')(sequelize, DataTypes);
-const Trade = require('./trade')(sequelize, DataTypes);
-const Transaction = require('./transaction')(sequelize, DataTypes);
-const Price = require('./price')(sequelize, DataTypes);
-
-// 관계 설정
-User.hasMany(Wallet, { foreignKey: 'user_id' });
-Wallet.belongsTo(User, { foreignKey: 'user_id' });
-
-User.hasMany(Order, { foreignKey: 'user_id' });
-Order.belongsTo(User, { foreignKey: 'user_id' });
-
-User.hasMany(Transaction, { foreignKey: 'user_id' });
-Transaction.belongsTo(User, { foreignKey: 'user_id' });
-
-Order.hasMany(Trade, { foreignKey: 'buy_order_id' });
-Order.hasMany(Trade, { foreignKey: 'sell_order_id' });
+sequelize
+  .sync({ force: false })
+  .then(() => console.log("Database synced"))
+  .catch((err) => console.error("Sync error:", err));
 
 module.exports = {
   sequelize,
   Sequelize,
-  User,
-  Wallet,
-  Order,
-  Trade,
-  Transaction,
-  Price
+  ...models,
 };
-
-
-sequelize.sync({ alter: true }) 
-  .then(() => {
-    console.log('📦 All tables synced successfully.');
-  })
-  .catch(err => {
-    console.error('❌ Table sync error:', err);
-  });
-

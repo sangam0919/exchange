@@ -1,12 +1,30 @@
-module.exports = (sequelize, DataTypes) => {
-    return sequelize.define('Wallet', {
-      id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-      user_id: { type: DataTypes.INTEGER, allowNull: false },
-      coin: { type: DataTypes.STRING, allowNull: false },
-      balance: { type: DataTypes.DECIMAL(20, 8), defaultValue: 0 }
-    }, {
-      tableName: 'wallets',
-      timestamps: false
-    });
-  };
-  
+const { Model, DataTypes } = require("sequelize");
+
+class Wallet extends Model {
+  static init(sequelize) {
+    return super.init(
+      {
+        address: {
+          type: DataTypes.STRING,
+          allowNull: false,
+        },
+        publicKey: {
+          type: DataTypes.STRING,
+          allowNull: false,
+        }
+      },
+      {
+        sequelize,
+        modelName: "Wallet",
+        tableName: "wallets",
+        timestamps: true,
+      }
+    );
+  }
+
+  static associate(models) {
+    this.belongsTo(models.User, { foreignKey: "userId" }); // 외래키 연결
+  }
+}
+
+module.exports = Wallet;

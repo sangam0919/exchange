@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import MainPage from './pages/MainPage';
 import ExchangeDetailPage from './pages/ExchangeDetailPage';
 import MyPage from './pages/Mypage';
-import IntroPopup from './components/IntroPopup';
+import socket from './socket/socket';
+// import AlarmNav from './components/AlarmNav';
 
 function App() {
   // const [showIntro, setShowIntro] = useState(true);
@@ -23,8 +24,25 @@ function App() {
   // if (showIntro) {
   //   return <IntroPopup onClose={handleIntroClose} />;
   // }
+
+  useEffect(() => {
+    socket.on('connect', () => {
+      console.log('소켓 연결됨:', socket.id);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('소켓 연결 종료');
+    });
+
+    return () => {
+      socket.off('connect');
+      socket.off('disconnect');
+    };
+  }, []);
+
   return (
     <Router>
+       {/* <AlarmNav hasNew={true} />   */}
       <Header />
       <Routes>
         <Route path="/" element={<MainPage /> } />

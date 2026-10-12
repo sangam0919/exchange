@@ -1,0 +1,13 @@
+{
+  "name": "exchange",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install --prefix exchangebackend && npm install --prefix exchangefront",
+    "dev:backend": "npm start --prefix exchangebackend",
+    "dev:frontend": "npm start --prefix exchangefront",
+    "dev": "concurrently -n backend,front -c cyan,magenta \"npm run dev:backend\" \"npm run dev:frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
